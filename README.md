@@ -1,6 +1,8 @@
 # commForwardingStudioFlow
 This studio flow will forward calls and messages to defined cell number.  Calling in to this number from the defined cell will allow messages or calls to be sent back to last caller, or send-to can be defined.
 
+Are there things here that would be better handled in a function - most definitely.  But challenge for myself was to keep this entirely in Studio as a way to keep setup very simple.  
+
 To set up - 
   1. Create a new Standard API Key for account you'd like to use.  Save Key & Secret.
   2. create new Studio Flow.  Choose to create from JSON.  Paste in contents of JSON file here.

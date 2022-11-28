@@ -1,0 +1,996 @@
+{
+  "description": "A New Flow",
+  "states": [
+    {
+      "name": "Trigger",
+      "type": "trigger",
+      "transitions": [
+        {
+          "next": "set_EnvironmentVariables",
+          "event": "incomingMessage"
+        },
+        {
+          "next": "set_EnvironmentVariables",
+          "event": "incomingCall"
+        },
+        {
+          "event": "incomingConversationMessage"
+        },
+        {
+          "event": "incomingRequest"
+        },
+        {
+          "event": "incomingParent"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": -290,
+          "y": -730
+        }
+      }
+    },
+    {
+      "name": "callMe",
+      "type": "connect-call-to",
+      "transitions": [
+        {
+          "event": "callCompleted"
+        },
+        {
+          "event": "hangup"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": -110,
+          "y": 390
+        },
+        "caller_id": "{{contact.channel.address}}",
+        "noun": "number",
+        "to": "{{flow.variables.yourCellNumber}}",
+        "timeout": 30
+      }
+    },
+    {
+      "name": "forwardSMSToMe",
+      "type": "send-message",
+      "transitions": [
+        {
+          "event": "sent"
+        },
+        {
+          "event": "failed"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": -1160,
+          "y": 280
+        },
+        "service": "{{trigger.message.InstanceSid}}",
+        "channel": "{{trigger.message.ChannelSid}}",
+        "from": "{{trigger.message.To}}",
+        "to": "{{flow.variables.yourCellNumber}}",
+        "body": "{{trigger.message.From}}~{{trigger.message.Body}}"
+      }
+    },
+    {
+      "name": "isItMe_SMS",
+      "type": "split-based-on",
+      "transitions": [
+        {
+          "next": "forwardSMSToMe",
+          "event": "noMatch"
+        },
+        {
+          "next": "find_Specific_Number",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "If value matches_any_of 7209717719",
+              "arguments": [
+                "{{trigger.message.From}}"
+              ],
+              "type": "equal_to",
+              "value": "{{flow.variables.yourCellNumber}}"
+            }
+          ]
+        }
+      ],
+      "properties": {
+        "input": "{{trigger.message.From}}",
+        "offset": {
+          "x": -750,
+          "y": 40
+        }
+      }
+    },
+    {
+      "name": "replyToOtherSender",
+      "type": "send-message",
+      "transitions": [
+        {
+          "next": "confirmSend",
+          "event": "sent"
+        },
+        {
+          "next": "sendFailed",
+          "event": "failed"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": -1100,
+          "y": 790
+        },
+        "service": "{{trigger.message.InstanceSid}}",
+        "channel": "{{trigger.message.ChannelSid}}",
+        "from": "{{trigger.message.To}}",
+        "to": "{{flow.variables.pulledNumber}}",
+        "body": "{{flow.variables.trimBody}}"
+      }
+    },
+    {
+      "name": "find_Specific_Number",
+      "type": "set-variables",
+      "transitions": [
+        {
+          "next": "checkIfNumberSent",
+          "event": "next"
+        }
+      ],
+      "properties": {
+        "variables": [
+          {
+            "value": "{{trigger.message.Body | split:\"~\" | first}}",
+            "key": "pulledNumber"
+          },
+          {
+            "value": "{{trigger.message.Body | split:\"~\" | last}}",
+            "key": "trimBody"
+          }
+        ],
+        "offset": {
+          "x": -580,
+          "y": 270
+        }
+      }
+    },
+    {
+      "name": "checkIfNumberSent",
+      "type": "split-based-on",
+      "transitions": [
+        {
+          "next": "replyToOtherSender",
+          "event": "noMatch"
+        },
+        {
+          "next": "getLastMessages",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "If value equal_to {{flow.variables.trimBody}}",
+              "arguments": [
+                "{{flow.variables.pulledNumber}}"
+              ],
+              "type": "equal_to",
+              "value": "{{flow.variables.trimBody}}"
+            }
+          ]
+        }
+      ],
+      "properties": {
+        "input": "{{flow.variables.pulledNumber}}",
+        "offset": {
+          "x": -870,
+          "y": 550
+        }
+      }
+    },
+    {
+      "name": "isItMe_Phone",
+      "type": "split-based-on",
+      "transitions": [
+        {
+          "next": "callMe",
+          "event": "noMatch"
+        },
+        {
+          "next": "enterNumberOrLookup",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "If value matches_any_of 7209717719",
+              "arguments": [
+                "{{trigger.call.From}}"
+              ],
+              "type": "equal_to",
+              "value": "{{flow.variables.yourCellNumber}}"
+            }
+          ]
+        }
+      ],
+      "properties": {
+        "input": "{{trigger.call.From}}",
+        "offset": {
+          "x": 10,
+          "y": 20
+        }
+      }
+    },
+    {
+      "name": "set_EnvironmentVariables",
+      "type": "set-variables",
+      "transitions": [
+        {
+          "next": "findCallorSMS_split",
+          "event": "next"
+        }
+      ],
+      "properties": {
+        "variables": [
+          {
+            "value": "+1xxxxxxxxxx",
+            "key": "yourCellNumber"
+          },
+          {
+            "value": "SKxxxxxxxxxxxxxxxxxxxx",
+            "key": "API_key"
+          },
+          {
+            "value": "xxxxxxxxxxxxxxxxxxxxxxx",
+            "key": "API_secret"
+          },
+          {
+            "value": "0",
+            "key": "theCount"
+          }
+        ],
+        "offset": {
+          "x": -320,
+          "y": -470
+        }
+      }
+    },
+    {
+      "name": "findCallorSMS_split",
+      "type": "split-based-on",
+      "transitions": [
+        {
+          "next": "isItMe_SMS",
+          "event": "noMatch"
+        },
+        {
+          "next": "isItMe_Phone",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "{{trigger.message.From}}",
+              "arguments": [
+                "{{trigger.call.From}}"
+              ],
+              "type": "is_not_blank",
+              "value": "Is Not Blank"
+            }
+          ]
+        }
+      ],
+      "properties": {
+        "input": "{{trigger.call.From}}",
+        "offset": {
+          "x": -370,
+          "y": -230
+        }
+      }
+    },
+    {
+      "name": "getLastMessages",
+      "type": "make-http-request",
+      "transitions": [
+        {
+          "next": "lastSendNumber",
+          "event": "success"
+        },
+        {
+          "event": "failed"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": -790,
+          "y": 1110
+        },
+        "method": "GET",
+        "content_type": "application/x-www-form-urlencoded;charset=utf-8",
+        "parameters": [
+          {
+            "value": "{{trigger.message.To}}",
+            "key": "To"
+          },
+          {
+            "value": "2",
+            "key": "pageSize"
+          }
+        ],
+        "url": "https://{{flow.variables.API_key}}:{{flow.variables.API_secret}}@api.twilio.com/2010-04-01/Accounts/{{trigger.message.AccountSid}}/Messages.json"
+      }
+    },
+    {
+      "name": "enterNumberOrLookup",
+      "type": "gather-input-on-call",
+      "transitions": [
+        {
+          "next": "CallNumberEntered",
+          "event": "keypress"
+        },
+        {
+          "next": "getFullCallList",
+          "event": "speech"
+        },
+        {
+          "event": "timeout"
+        }
+      ],
+      "properties": {
+        "voice": "Polly.Joanna-Neural",
+        "speech_timeout": "auto",
+        "offset": {
+          "x": 290,
+          "y": 360
+        },
+        "loop": 1,
+        "finish_on_key": "#",
+        "say": "Please use keypad to enter the number you would like to call.  Enter # when number finished.  Or to find last inbound call, say Call Last",
+        "language": "en-US",
+        "stop_gather": true,
+        "gather_language": "en-US",
+        "profanity_filter": "true",
+        "timeout": 30
+      }
+    },
+    {
+      "name": "CallNumberEntered",
+      "type": "connect-call-to",
+      "transitions": [
+        {
+          "event": "callCompleted"
+        },
+        {
+          "event": "hangup"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": 90,
+          "y": 950
+        },
+        "caller_id": "{{contact.channel.address}}",
+        "noun": "number",
+        "to": "{{widgets.enterNumberOrLookup.Digits}}",
+        "timeout": 30
+      }
+    },
+    {
+      "name": "testingReply",
+      "type": "send-message",
+      "transitions": [
+        {
+          "event": "sent"
+        },
+        {
+          "event": "failed"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": -1370,
+          "y": 1560
+        },
+        "service": "{{trigger.message.InstanceSid}}",
+        "channel": "{{trigger.message.ChannelSid}}",
+        "from": "{{flow.channel.address}}",
+        "to": "{{flow.variables.yourCellNumber}}",
+        "body": "{% if theCount %}\n{% assign theCount = theCount | plus: 1 %}\n{% else %}\n{% assign theCount = 0 | plus: 0 %}\n{% endif %}\n{{theCount}} \nfrom: \n{{widgets.getLastMessages.parsed.messages[theCount].from}}\n\nlastSend: {{flow.variables.lastSend}}"
+      }
+    },
+    {
+      "name": "onlySendIfRealNumberNotYours",
+      "type": "split-based-on",
+      "transitions": [
+        {
+          "next": "confirmSMSsendNumber",
+          "event": "noMatch"
+        },
+        {
+          "next": "incrementCountSMS",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "If value equal_to {{flow.variables.yourCellNumber}}",
+              "arguments": [
+                "{{flow.variables.lastSend}}"
+              ],
+              "type": "equal_to",
+              "value": "{{flow.variables.yourCellNumber}}"
+            }
+          ]
+        },
+        {
+          "next": "lastSMSsenderNotFound",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "{{flow.variables.thisFrom}}",
+              "arguments": [
+                "{{flow.variables.lastSend}}"
+              ],
+              "type": "is_blank",
+              "value": "Is Blank"
+            }
+          ]
+        }
+      ],
+      "properties": {
+        "input": "{{flow.variables.lastSend}}",
+        "offset": {
+          "x": -810,
+          "y": 1670
+        }
+      }
+    },
+    {
+      "name": "messageToLastSender",
+      "type": "send-message",
+      "transitions": [
+        {
+          "next": "confirmSMS",
+          "event": "sent"
+        },
+        {
+          "next": "sendFailed",
+          "event": "failed"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": -1850,
+          "y": 2020
+        },
+        "service": "{{trigger.message.InstanceSid}}",
+        "channel": "{{trigger.message.ChannelSid}}",
+        "from": "{{trigger.message.To}}",
+        "to": "{{flow.variables.lastSend}}",
+        "body": "{{trigger.message.Body}}"
+      }
+    },
+    {
+      "name": "lastSendNumber",
+      "type": "set-variables",
+      "transitions": [
+        {
+          "next": "onlySendIfRealNumberNotYours",
+          "event": "next"
+        }
+      ],
+      "properties": {
+        "variables": [
+          {
+            "value": "{%- assign theCount = flow.variables.theCount | plus: 0 -%}{{widgets.getLastMessages.parsed.messages[theCount].from}}",
+            "key": "lastSend"
+          }
+        ],
+        "offset": {
+          "x": -900,
+          "y": 1410
+        }
+      }
+    },
+    {
+      "name": "confirmSMS",
+      "type": "send-message",
+      "transitions": [
+        {
+          "event": "sent"
+        },
+        {
+          "event": "failed"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": -1850,
+          "y": 2330
+        },
+        "service": "{{trigger.message.InstanceSid}}",
+        "channel": "{{trigger.message.ChannelSid}}",
+        "from": "{{flow.channel.address}}",
+        "to": "{{contact.channel.address}}",
+        "body": "Sent to {{flow.variables.lastSend}}"
+      }
+    },
+    {
+      "name": "confirmSend",
+      "type": "send-message",
+      "transitions": [
+        {
+          "event": "sent"
+        },
+        {
+          "event": "failed"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": -1640,
+          "y": 1040
+        },
+        "service": "{{trigger.message.InstanceSid}}",
+        "channel": "{{trigger.message.ChannelSid}}",
+        "from": "{{flow.channel.address}}",
+        "to": "{{contact.channel.address}}",
+        "body": "Sent"
+      }
+    },
+    {
+      "name": "sendFailed",
+      "type": "send-message",
+      "transitions": [
+        {
+          "event": "sent"
+        },
+        {
+          "event": "failed"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": -1290,
+          "y": 1040
+        },
+        "service": "{{trigger.message.InstanceSid}}",
+        "channel": "{{trigger.message.ChannelSid}}",
+        "from": "{{flow.channel.address}}",
+        "to": "{{contact.channel.address}}",
+        "body": "Send Failed."
+      }
+    },
+    {
+      "name": "incrementCountSMS",
+      "type": "set-variables",
+      "transitions": [
+        {
+          "next": "keepLoopUnder15limit",
+          "event": "next"
+        }
+      ],
+      "properties": {
+        "variables": [
+          {
+            "value": "{{flow.variables.theCount | plus: 1}}",
+            "key": "theCount"
+          }
+        ],
+        "offset": {
+          "x": -450,
+          "y": 1940
+        }
+      }
+    },
+    {
+      "name": "keepLoopUnder15limit",
+      "type": "split-based-on",
+      "transitions": [
+        {
+          "next": "lastSMSsenderNotFound",
+          "event": "noMatch"
+        },
+        {
+          "next": "lastSendNumber",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "If value less_than 14",
+              "arguments": [
+                "{{flow.variables.theCount}}"
+              ],
+              "type": "less_than",
+              "value": "14"
+            }
+          ]
+        }
+      ],
+      "properties": {
+        "input": "{{flow.variables.theCount}}",
+        "offset": {
+          "x": -390,
+          "y": 2180
+        }
+      }
+    },
+    {
+      "name": "sendORloopSMS",
+      "type": "split-based-on",
+      "transitions": [
+        {
+          "event": "noMatch"
+        },
+        {
+          "next": "messageToLastSender",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "If value equal_to 1",
+              "arguments": [
+                "{{widgets.confirmSMSsendNumber.inbound.Body}}"
+              ],
+              "type": "equal_to",
+              "value": "1"
+            }
+          ]
+        },
+        {
+          "next": "incrementCountSMS",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "If value equal_to 2",
+              "arguments": [
+                "{{widgets.confirmSMSsendNumber.inbound.Body}}"
+              ],
+              "type": "equal_to",
+              "value": "2"
+            }
+          ]
+        }
+      ],
+      "properties": {
+        "input": "{{widgets.confirmSMSsendNumber.inbound.Body}}",
+        "offset": {
+          "x": -1170,
+          "y": 2180
+        }
+      }
+    },
+    {
+      "name": "confirmSMSsendNumber",
+      "type": "send-and-wait-for-reply",
+      "transitions": [
+        {
+          "next": "sendORloopSMS",
+          "event": "incomingMessage"
+        },
+        {
+          "next": "lastSMSsenderNotFound",
+          "event": "timeout"
+        },
+        {
+          "next": "lastSMSsenderNotFound",
+          "event": "deliveryFailure"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": -970,
+          "y": 1890
+        },
+        "service": "{{trigger.message.InstanceSid}}",
+        "channel": "{{trigger.message.ChannelSid}}",
+        "from": "{{flow.channel.address}}",
+        "body": "reply 1 to send to {{flow.variables.lastSend}} \nreply 2 to look for older message sender\n{{flow.variables.theCount}}",
+        "timeout": "3600"
+      }
+    },
+    {
+      "name": "lastSMSsenderNotFound",
+      "type": "send-message",
+      "transitions": [
+        {
+          "event": "sent"
+        },
+        {
+          "event": "failed"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": 40,
+          "y": 1360
+        },
+        "service": "{{trigger.message.InstanceSid}}",
+        "channel": "{{trigger.message.ChannelSid}}",
+        "from": "{{flow.channel.address}}",
+        "to": "{{contact.channel.address}}",
+        "body": "Not able to find your last sender. \n Please resend message with to number  \n+1xxxxxxx~yourMessage"
+      }
+    },
+    {
+      "name": "getFullCallList",
+      "type": "make-http-request",
+      "transitions": [
+        {
+          "next": "getLastCaller",
+          "event": "success"
+        },
+        {
+          "next": "OnlyEnterNumberToCall",
+          "event": "failed"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": 720,
+          "y": 560
+        },
+        "method": "GET",
+        "content_type": "application/x-www-form-urlencoded;charset=utf-8",
+        "parameters": [
+          {
+            "value": "{{trigger.call.To}}",
+            "key": "To"
+          },
+          {
+            "value": "2",
+            "key": "pageSize"
+          }
+        ],
+        "url": "https://{{flow.variables.API_key}}:{{flow.variables.API_secret}}@api.twilio.com/2010-04-01/Accounts/{{trigger.call.AccountSid}}/Calls.json"
+      }
+    },
+    {
+      "name": "OnlyEnterNumberToCall",
+      "type": "gather-input-on-call",
+      "transitions": [
+        {
+          "next": "CallNumberEntered",
+          "event": "keypress"
+        },
+        {
+          "event": "speech"
+        },
+        {
+          "event": "timeout"
+        }
+      ],
+      "properties": {
+        "voice": "Polly.Joanna-Neural",
+        "speech_timeout": "auto",
+        "offset": {
+          "x": 400,
+          "y": 740
+        },
+        "loop": 1,
+        "finish_on_key": "#",
+        "say": "Unable to find last caller. {{widgets.getFullCallList.parsed.}}",
+        "language": "en-US",
+        "stop_gather": true,
+        "gather_language": "en-US",
+        "profanity_filter": "true",
+        "timeout": 30
+      }
+    },
+    {
+      "name": "getLastCaller",
+      "type": "set-variables",
+      "transitions": [
+        {
+          "next": "onlyAskIfLastNumberNotYours",
+          "event": "next"
+        }
+      ],
+      "properties": {
+        "variables": [
+          {
+            "value": "{%- assign theCount = flow.variables.theCount | plus: 0 -%}{{widgets.getFullCallList.parsed.calls[theCount].from}}",
+            "key": "lastCaller"
+          }
+        ],
+        "offset": {
+          "x": 900,
+          "y": 860
+        }
+      }
+    },
+    {
+      "name": "onlyAskIfLastNumberNotYours",
+      "type": "split-based-on",
+      "transitions": [
+        {
+          "next": "verifyCallingNumber",
+          "event": "noMatch"
+        },
+        {
+          "next": "incrementCountCall",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "If value equal_to {{flow.variables.yourCellNumber}}",
+              "arguments": [
+                "{{flow.variables.lastCaller}}"
+              ],
+              "type": "equal_to",
+              "value": "{{flow.variables.yourCellNumber}}"
+            }
+          ]
+        },
+        {
+          "next": "OnlyEnterNumberToCall",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "{{flow.variables.thisFrom}}",
+              "arguments": [
+                "{{flow.variables.lastCaller}}"
+              ],
+              "type": "is_blank",
+              "value": "Is Blank"
+            }
+          ]
+        }
+      ],
+      "properties": {
+        "input": "{{flow.variables.lastCaller}}",
+        "offset": {
+          "x": 900,
+          "y": 1080
+        }
+      }
+    },
+    {
+      "name": "incrementCountCall",
+      "type": "set-variables",
+      "transitions": [
+        {
+          "next": "keepCallLoopUnder15limit",
+          "event": "next"
+        }
+      ],
+      "properties": {
+        "variables": [
+          {
+            "value": "{{flow.variables.theCount | plus: 1}}",
+            "key": "theCount"
+          }
+        ],
+        "offset": {
+          "x": 1480,
+          "y": 1350
+        }
+      }
+    },
+    {
+      "name": "keepCallLoopUnder15limit",
+      "type": "split-based-on",
+      "transitions": [
+        {
+          "event": "noMatch"
+        },
+        {
+          "next": "getLastCaller",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "If value less_than 14",
+              "arguments": [
+                "{{flow.variables.theCount}}"
+              ],
+              "type": "less_than",
+              "value": "14"
+            }
+          ]
+        }
+      ],
+      "properties": {
+        "input": "{{flow.variables.theCount}}",
+        "offset": {
+          "x": 1490,
+          "y": 1600
+        }
+      }
+    },
+    {
+      "name": "verifyCallingNumber",
+      "type": "gather-input-on-call",
+      "transitions": [
+        {
+          "next": "callOrCycle",
+          "event": "keypress"
+        },
+        {
+          "event": "speech"
+        },
+        {
+          "event": "timeout"
+        }
+      ],
+      "properties": {
+        "voice": "Polly.Joanna-Neural",
+        "offset": {
+          "x": 600,
+          "y": 1370
+        },
+        "finish_on_key": "#",
+        "say": "Press 1 to call {{flow.variables.lastCaller}} .\nPress 2 to find previous caller.",
+        "language": "en-US",
+        "stop_gather": true,
+        "speech_model": "numbers_and_commands",
+        "profanity_filter": "true",
+        "timeout": 10,
+        "number_of_digits": 1,
+        "speech_timeout": "auto",
+        "loop": 1,
+        "gather_language": "en"
+      }
+    },
+    {
+      "name": "callOrCycle",
+      "type": "split-based-on",
+      "transitions": [
+        {
+          "event": "noMatch"
+        },
+        {
+          "next": "callConfirmedLastCaller",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "If value equal_to 1",
+              "arguments": [
+                "{{widgets.verifyCallingNumber.Digits}}"
+              ],
+              "type": "equal_to",
+              "value": "1"
+            }
+          ]
+        },
+        {
+          "next": "incrementCountCall",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "If value equal_to 2",
+              "arguments": [
+                "{{widgets.verifyCallingNumber.Digits}}"
+              ],
+              "type": "equal_to",
+              "value": "2"
+            }
+          ]
+        }
+      ],
+      "properties": {
+        "input": "{{widgets.verifyCallingNumber.Digits}}",
+        "offset": {
+          "x": 610,
+          "y": 1630
+        }
+      }
+    },
+    {
+      "name": "callConfirmedLastCaller",
+      "type": "connect-call-to",
+      "transitions": [
+        {
+          "event": "callCompleted"
+        },
+        {
+          "event": "hangup"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": 610,
+          "y": 1920
+        },
+        "caller_id": "{{contact.channel.address}}",
+        "noun": "number",
+        "to": "{{flow.variables.lastCaller}}",
+        "timeout": 30
+      }
+    }
+  ],
+  "initial_state": "Trigger",
+  "flags": {
+    "allow_concurrent_calls": true
+  }
+}

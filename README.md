@@ -15,7 +15,7 @@ To use -
 Messaging:
 All inbound messages will be sent to you from your Masking Phone Number.  They will begin with the number the message was sent from orginally.  
 If you reply with a basic message, the system will find the last inbound SMS and ask if you'd like to send your message to that number.  You can accept or ask to find an older number.  There is a limit of 15 loop attempts, so how many older numbers you can access will vary. 
-At any time, you can reply with "+1xxxxxxxxxx/~Your message body".  This will send the message after "/~" to the number listed before.  
+At any time, you can reply with "+1xxxxxxxxxx\~Your message body".  This will send the message after "\~" to the number listed before.  
 
 Calling:
 Calls will be shown in your phone as coming from the original caller.  You can call them directly back on that number, but this will be shown from your personal cell.  
